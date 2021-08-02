@@ -88,19 +88,25 @@ def normalize(
             if old_column_name is not None:
                 if len(values) == 3:
                     df[old_column_name] = df[old_column_name].apply(values[2])
-                    df[new_column_name] = df[old_column_name].astype(new_type)
-                else:
-                    df[new_column_name] = df[old_column_name].astype(new_type)
+                if new_type in {"Int64", "Float64"}:
+                    df[old_column_name] = pd.to_numeric(
+                        df[old_column_name], errors="coerce"
+                    )
+                df[new_column_name] = df[old_column_name].astype(
+                    new_type, errors="ignore"
+                )
                 if new_column_name != old_column_name:
                     df.drop(columns=old_column_name, inplace=True)
             else:
                 if len(values) == 3:
                     df[new_column_name] = values[2]
-                    df[new_column_name] = df[new_column_name].astype(new_type)
-            if new_type != str:
-                df[new_column_name].fillna({new_column_name: fill}, inplace=True)
-            else:
+                else:
+                    df[new_column_name] = fill
+                df[new_column_name] = df[new_column_name].astype(new_type)
+            if new_type == str:
                 df[new_column_name].replace("None", fill, inplace=True)
+            else:
+                df[new_column_name].fillna({new_column_name: fill}, inplace=True)
     except Exception:
         logging.exception("An unexpected error occured while normalizing")
     else:
@@ -169,15 +175,15 @@ if __name__ == "__main__":
             if x not in ["RUF", "NSU", "BMW", "VW", "MG", "PGO", "MINI", "AGM"]
             else x,
         ],
-        "manufacture_year": ["FirstRegYear", "h"],
-        "mileage": ["Km", np.float32],
+        "manufacture_year": ["FirstRegYear", "Int64"],
+        "mileage": ["Km", "Float64"],
         "mileage_unit": [None, "category", "kilometer"],
         "model": ["ModelText", str],
         "model_variant": ["TypeName", str],
         "price_on_request": [None, "category", "false"],
         "type": [None, "category", "car"],
         "zip": [None, "category", "null"],
-        "manufacture_month": ["FirstRegMonth", "h"],
+        "manufacture_month": ["FirstRegMonth", "Int64"],
         "fuel_consumption_unit": [
             "ConsumptionTotalText",
             "category",
@@ -196,4 +202,3 @@ if __name__ == "__main__":
     except Exception:
         logging.exception("An unexpected error occured while exporting files to excel")
     logging.info("Finished data wrangling")
-
