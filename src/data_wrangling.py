@@ -97,7 +97,10 @@ def normalize(
                 if len(values) == 3:
                     df[new_column_name] = values[2]
                     df[new_column_name] = df[new_column_name].astype(new_type)
-            df[new_column_name].fillna({new_column_name: fill}, inplace=True)
+            if new_type != str:
+                df[new_column_name].fillna({new_column_name: fill}, inplace=True)
+            else:
+                df[new_column_name].replace("None", fill, inplace=True)
     except Exception:
         logging.exception("An unexpected error occured while normalizing")
     else:
@@ -130,7 +133,7 @@ def get_country_codes(
         df[col_name] = df[col].map(city_dict)
     except Exception:
         logging.exception(
-            "An unexpected error occured while retrieving country codes form cities"
+            "An unexpected error occured while retrieving country codes form cities, probably too many calls"
         )
     else:
         logging.info("Country code extraction correctly")
@@ -169,8 +172,8 @@ if __name__ == "__main__":
         "manufacture_year": ["FirstRegYear", "h"],
         "mileage": ["Km", np.float32],
         "mileage_unit": [None, "category", "kilometer"],
-        "model": ["ModelText", "O"],
-        "model_variant": ["TypeName", "O"],
+        "model": ["ModelText", str],
+        "model_variant": ["TypeName", str],
         "price_on_request": [None, "category", "false"],
         "type": [None, "category", "car"],
         "zip": [None, "category", "null"],
